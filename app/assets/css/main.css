@@ -1,0 +1,292 @@
+/* ==========================================================================
+   LE PATIO — design system
+   Carré, étroit, bleu profond sur gris crème, une touche de main levée.
+   ========================================================================== */
+
+:root {
+  --ink: #11126a;          /* bleu profond du logo */
+  --ink-deep: #0a0b45;     /* nuit */
+  --cobalt: #2335c4;       /* la porte bleue de la salle bar */
+  --cream: #f6f1e8;        /* fond crème */
+  --stone: #e7e4de;        /* léger gris */
+  --stone-2: #d9d5cd;
+  --ochre: #e3a63c;        /* le store et la façade jaune */
+  --paper: #fbf8f2;
+
+  --f-display: 'Bebas Neue', 'Oswald', Impact, sans-serif;
+  --f-narrow: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --f-body: 'Barlow', system-ui, sans-serif;
+  --f-script: 'Sacramento', cursive;
+
+  --gutter: clamp(1.25rem, 3.2vw, 3rem);
+  --header-h: 84px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* grain papier, très léger */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 3px;
+}
+
+/* ---------- Typo ---------- */
+
+.display {
+  font-family: var(--f-display);
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.narrow {
+  font-family: var(--f-narrow);
+}
+
+.script {
+  font-family: var(--f-script);
+  font-weight: 400;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  font-family: var(--f-narrow);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75em;
+}
+.eyebrow::before {
+  content: '';
+  width: 2.2em;
+  height: 1px;
+  background: currentColor;
+}
+
+.lead {
+  font-family: var(--f-narrow);
+  font-weight: 400;
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  line-height: 1.35;
+}
+
+.h-xl {
+  font-size: clamp(4rem, 13vw, 13rem);
+}
+.h-lg {
+  font-size: clamp(3rem, 8vw, 8rem);
+}
+.h-md {
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+}
+
+/* ---------- Layout ---------- */
+
+.wrap {
+  width: 100%;
+  padding-inline: var(--gutter);
+  margin-inline: auto;
+  max-width: 1680px;
+}
+
+.section {
+  position: relative;
+  padding-block: clamp(5rem, 12vw, 11rem);
+}
+
+.rule {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.25;
+  border: 0;
+  margin: 0;
+}
+
+/* ---------- Boutons ---------- */
+
+.btn {
+  --bg: var(--ink);
+  --fg: var(--cream);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9em;
+  padding: 1.05em 1.6em;
+  font-family: var(--f-narrow);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+  isolation: isolate;
+  transition: color 0.5s var(--ease-out);
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cobalt);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.55s var(--ease-out);
+  z-index: -1;
+}
+.btn:hover::before {
+  transform: scaleY(1);
+}
+.btn svg {
+  width: 1.1em;
+  height: 1.1em;
+  transition: transform 0.5s var(--ease-out);
+}
+.btn:hover svg {
+  transform: translateX(4px);
+}
+.btn--ghost {
+  --bg: transparent;
+  --fg: currentColor;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.btn--ghost:hover {
+  color: var(--cream);
+}
+.btn--cream {
+  --bg: var(--cream);
+  --fg: var(--ink);
+}
+.btn--cream:hover {
+  color: var(--cream);
+}
+
+.link-line {
+  position: relative;
+  display: inline-block;
+}
+.link-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.5s var(--ease-out);
+}
+.link-line:hover::after,
+.link-line.router-link-active::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ---------- Images ---------- */
+
+.frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--stone);
+}
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.frame[data-parallax-img] img {
+  height: 120%;
+  margin-top: -10%;
+}
+
+/* SplitText masks */
+.split-line {
+  overflow: clip;
+  padding-bottom: 0.04em;
+  margin-bottom: -0.04em;
+}
+
+/* ---------- Motion préférences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

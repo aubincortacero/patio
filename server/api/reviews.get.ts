@@ -5,8 +5,11 @@
  * - Place ID : NUXT_GOOGLE_PLACE_ID (optionnel, retrouvé par recherche texte sinon)
  *
  * La réponse est mise en cache 6 h côté serveur : quelques appels par jour seulement.
- * Sans clé (ou en cas d'erreur), on renvoie la note globale connue, sans avis inventés.
+ * Sans clé (ou en cas d'erreur), on renvoie la note globale connue et la sélection
+ * manuelle de server/data/reviews.ts — jamais d'avis inventés.
  */
+
+import { manualReviews } from '../data/reviews'
 
 export interface PatioReview {
   author: string
@@ -30,8 +33,8 @@ const FALLBACK: ReviewsPayload = {
   source: 'fallback',
   rating: 4.8,
   count: 430,
-  url: 'https://www.google.com/maps/search/?api=1&query=Restaurant+Le+Patio+Ax-les-Thermes',
-  reviews: [],
+  url: 'https://www.google.com/maps/place/Restaurant+Le+Patio/@42.7195386,1.8382531,17z/data=!4m6!3m5!1s0x12af9d073e63ae85:0x31d9a861d55278b6!8m2!3d42.7195386!4d1.8382531',
+  reviews: manualReviews,
 }
 
 const SEARCH_QUERY = 'Restaurant Le Patio, 3 Rue Victor Pilhes, 09110 Ax-les-Thermes'
@@ -63,15 +66,12 @@ async function resolvePlaceId(key: string): Promise<string | undefined> {
   return res.places?.[0]?.id
 }
 
-export default defineCachedEventHandler(
-  async (): Promise<ReviewsPayload> => {
-    const config = useRuntimeConfig()
-    const key = config.googlePlacesKey as string
-    if (!key) return FALLBACK
-
+/** Appel Google mis en cache 6 h (null en cas d'échec : jamais mis en cache). */
+const fetchGoogle = defineCachedFunction(
+  async (key: string, configuredPlaceId: string): Promise<ReviewsPayload | null> => {
     try {
-      const placeId = (config.googlePlaceId as string) || (await resolvePlaceId(key))
-      if (!placeId) return FALLBACK
+      const placeId = configuredPlaceId || (await resolvePlaceId(key))
+      if (!placeId) return null
 
       const place = await $fetch<GooglePlace>(`https://places.googleapis.com/v1/places/${placeId}`, {
         query: { languageCode: 'fr' },
@@ -95,22 +95,31 @@ export default defineCachedEventHandler(
         // On met en avant les meilleurs avis récents
         .sort((a, b) => b.rating - a.rating || (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
 
+      // Si Google ne renvoie aucun avis exploitable, on garde la sélection manuelle
       return {
         source: 'google',
         rating: place.rating ?? FALLBACK.rating,
         count: place.userRatingCount ?? FALLBACK.count,
         url: place.googleMapsUri ?? FALLBACK.url,
-        reviews,
+        reviews: reviews.length ? reviews : manualReviews,
       }
     } catch (err) {
       console.error('[reviews] Google Places error:', err)
-      return FALLBACK
+      return null
     }
   },
   {
     name: 'google-reviews',
     maxAge: 60 * 60 * 6,
     swr: true,
-    getKey: () => 'patio',
+    getKey: () => 'patio-v2',
+    validate: (entry) => entry.value !== null,
   },
 )
+
+export default defineEventHandler(async (): Promise<ReviewsPayload> => {
+  const config = useRuntimeConfig()
+  const key = config.googlePlacesKey as string
+  if (!key) return FALLBACK
+  return (await fetchGoogle(key, config.googlePlaceId as string)) ?? FALLBACK
+})

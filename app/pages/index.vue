@@ -68,7 +68,7 @@ useReveal(root, ({ gsap, ScrollTrigger, reduced, root: el }) => {
       return
     }
     const tl = gsap.timeline({
-      scrollTrigger: { trigger: $('.reveal'), start: 'top top', end: '+=120%', scrub: true, pin: true },
+      scrollTrigger: { trigger: $('.reveal'), start: 'top top', end: '+=120%', scrub: true, pin: true, refreshPriority: 2 },
     })
     const start = window.innerWidth < 961 ? 'inset(16% 12% 16% 12%)' : 'inset(14% 31% 14% 31%)'
     tl.fromTo($('.reveal__frame'), { clipPath: start }, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' })
@@ -92,6 +92,7 @@ useReveal(root, ({ gsap, ScrollTrigger, reduced, root: el }) => {
         pin: true,
         invalidateOnRefresh: true,
         anticipatePin: 1,
+        refreshPriority: 1,
       },
     })
     // Parallaxe des images dans le défilement horizontal

@@ -19,10 +19,11 @@ const transition: TransitionProps = {
   mode: 'out-in',
   css: false,
   onLeave(_el, done) {
-    const { gsap, reduced, lenis } = tools()
+    const { gsap, reduced } = tools()
     ready.value = false
     if (reduced || !curtain.value) return done()
-    lenis.stop()
+    // Pas de lenis.stop() ici : il masque la barre de défilement, la page change de
+    // largeur et tout le contenu saute pendant que le rideau monte.
     gsap.set(curtain.value, { visibility: 'visible' })
     gsap.fromTo(
       curtain.value,
@@ -50,7 +51,6 @@ const transition: TransitionProps = {
         ease: 'expo.inOut',
         onStart: () => {
           ready.value = true
-          lenis.start()
         },
         onComplete: () => {
           gsap.set(curtain.value, { visibility: 'hidden' })
@@ -68,6 +68,7 @@ const transition: TransitionProps = {
 <template>
   <div class="app">
     <SitePreloader />
+    <ScrollProgress />
     <SiteHeader />
     <main>
       <NuxtPage :transition="transition" />

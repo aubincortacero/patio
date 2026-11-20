@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReviewsPayload } from '~~/server/api/reviews.get'
+import type { ReviewsPayload, PatioReview } from '~~/server/api/reviews.get'
 
 const { data } = await useFetch<ReviewsPayload>('/api/reviews', {
   key: 'reviews',
@@ -7,93 +7,204 @@ const { data } = await useFetch<ReviewsPayload>('/api/reviews', {
 })
 
 const root = ref<HTMLElement | null>(null)
+const quoteEl = ref<HTMLElement | null>(null)
+const metaEl = ref<HTMLElement | null>(null)
+const progress = ref<HTMLElement | null>(null)
+
 const rating = computed(() => data.value?.rating ?? 4.8)
 const count = computed(() => data.value?.count ?? 430)
-const reviews = computed(() => data.value?.reviews ?? [])
 const fmt = (n: number, d = 1) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d })
+const gUrl = computed(() => data.value?.url || 'https://www.google.com/maps/search/?api=1&query=Restaurant+Le+Patio+Ax-les-Thermes')
 
-const writeUrl = computed(() => data.value?.url || 'https://www.google.com/maps/search/?api=1&query=Restaurant+Le+Patio+Ax-les-Thermes')
+/**
+ * En développement, sans clé Google, des avis d'APERÇU clairement identifiés
+ * permettent de valider la mise en page. Ils ne sont jamais rendus en production.
+ */
+const isPreview = computed(() => import.meta.dev && !data.value?.reviews?.length)
+const PREVIEW: PatioReview[] = Array.from({ length: 5 }, (_, i) => ({
+  author: `Aperçu ${i + 1}`,
+  rating: 5,
+  text:
+    i % 2
+      ? "Texte d'aperçu, plus court, pour juger de la mise en page avec un avis bref."
+      : "Texte d'aperçu — le flux Google n'est pas encore connecté. Ajoutez NUXT_GOOGLE_PLACES_KEY dans le fichier .env et les vrais avis du Patio s'afficheront ici, un par un, avec le nom de leur auteur.",
+  when: 'dev uniquement',
+}))
+const reviews = computed<PatioReview[]>(() => (data.value?.reviews?.length ? data.value.reviews : isPreview.value ? PREVIEW : []))
+const n = computed(() => reviews.value.length)
+const index = ref(0)
+const current = computed(() => reviews.value[index.value])
+const clip = (t: string) => {
+  const flat = t.replace(/\s*\n+\s*/g, ' ')
+  return flat.length > 620 ? flat.slice(0, 620).replace(/\s+\S*$/, '') + '…' : flat
+}
+const isLong = computed(() => (current.value?.text.length ?? 0) > 300)
 
-useReveal(root, ({ gsap, root: el }) => {
-  // Compteurs qui montent
-  el.querySelectorAll<HTMLElement>('[data-count]').forEach((n) => {
-    const target = Number(n.dataset.count)
-    const dec = Number(n.dataset.dec || 0)
+/* ---------------- Changement d'avis ---------------- */
+type Gsap = typeof import('gsap').gsap
+type Split = InstanceType<typeof import('gsap/SplitText').SplitText>
+let split: Split | undefined
+let busy = false
+let autoplay: gsap.core.Tween | undefined
+const paused = ref(false)
+
+const tools = () => {
+  const app = useNuxtApp()
+  return {
+    gsap: app.$gsap as Gsap,
+    SplitText: app.$SplitText as typeof import('gsap/SplitText').SplitText,
+    reduced: app.$reducedMotion as boolean,
+  }
+}
+
+const splitIn = () => {
+  const { gsap, SplitText, reduced } = tools()
+  if (!quoteEl.value) return
+  split?.revert()
+  if (reduced) return
+  split = SplitText.create(quoteEl.value, { type: 'lines', mask: 'lines' })
+  gsap.from(split.lines, { yPercent: 105, duration: 1.1, ease: 'expo.out', stagger: 0.07 })
+  gsap.fromTo(metaEl.value, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, delay: 0.35 })
+}
+
+const go = (dir: 1 | -1 | number, absolute = false) => {
+  if (busy || n.value < 2) return
+  const next = absolute ? dir : (index.value + dir + n.value) % n.value
+  if (next === index.value) return
+  const { gsap, reduced } = tools()
+  autoplay?.kill()
+  if (reduced || !split) {
+    index.value = next
+    nextTick(startAutoplay)
+    return
+  }
+  busy = true
+  gsap.to(metaEl.value, { autoAlpha: 0, duration: 0.3 })
+  gsap.to(split.lines, {
+    yPercent: -105,
+    duration: 0.55,
+    ease: 'expo.in',
+    stagger: 0.04,
+    onComplete: () => {
+      index.value = next
+      nextTick(() => {
+        splitIn()
+        busy = false
+        startAutoplay()
+      })
+    },
+  })
+}
+
+const startAutoplay = () => {
+  const { gsap, reduced } = tools()
+  if (reduced || !progress.value || n.value < 2) return
+  autoplay?.kill()
+  autoplay = gsap.fromTo(progress.value, { scaleX: 0 }, { scaleX: 1, duration: 9, ease: 'none', onComplete: () => go(1) })
+  if (paused.value) autoplay.pause()
+}
+watch(paused, (p) => (p ? autoplay?.pause() : autoplay?.resume()))
+
+// Glisser au doigt (mobile)
+let x0 = 0
+const onDown = (e: PointerEvent) => (x0 = e.clientX)
+const onUp = (e: PointerEvent) => {
+  const dx = e.clientX - x0
+  if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1)
+}
+
+onBeforeUnmount(() => {
+  autoplay?.kill()
+  split?.revert()
+})
+
+useReveal(root, ({ gsap, ScrollTrigger, root: el }) => {
+  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+    const target = Number(node.dataset.count)
+    const dec = Number(node.dataset.dec || 0)
     const o = { v: 0 }
     gsap.to(o, {
       v: target,
-      duration: 2.2,
+      duration: 2,
       ease: 'expo.out',
-      scrollTrigger: { trigger: n, start: 'top 85%', once: true },
-      onUpdate: () => (n.textContent = fmt(o.v, dec)),
+      scrollTrigger: { trigger: node, start: 'top 85%', once: true },
+      onUpdate: () => (node.textContent = fmt(o.v, dec)),
     })
   })
-  // Étoiles
-  gsap.from(el.querySelectorAll('.rv__stars svg'), {
-    scale: 0,
-    rotate: -90,
-    duration: 0.9,
-    ease: 'back.out(2)',
-    stagger: 0.08,
-    scrollTrigger: { trigger: el.querySelector('.rv__stars'), start: 'top 85%', once: true },
-  })
+  if (quoteEl.value) {
+    gsap.set(quoteEl.value, { autoAlpha: 0 })
+    ScrollTrigger.create({
+      trigger: quoteEl.value,
+      start: 'top 85%',
+      once: true,
+      onEnter: () => {
+        gsap.set(quoteEl.value, { autoAlpha: 1 })
+        splitIn()
+        startAutoplay()
+      },
+    })
+  }
 })
 </script>
 
 <template>
-  <section ref="root" class="rv section">
-    <div class="wrap">
-      <div class="rv__head">
+  <section ref="root" class="rv">
+    <div class="wrap rv__grid">
+      <!-- Colonne gauche : titre & note -->
+      <aside class="rv__side">
         <span class="eyebrow" data-fade>Ils en parlent</span>
-        <h2 class="display h-lg" data-split-chars>Vos avis</h2>
-        <span class="script rv__script" data-fade data-delay="0.4">merci à vous !</span>
-      </div>
-
-      <div class="rv__grid">
-        <div class="rv__score">
-          <div class="rv__note">
-            <span class="display" :data-count="rating" data-dec="1">{{ fmt(rating) }}</span>
-            <span class="rv__on narrow">/5</span>
-          </div>
-          <div class="rv__stars" :aria-label="`Note de ${fmt(rating)} sur 5`">
-            <PatioIcon v-for="i in 5" :key="i" name="star" />
-          </div>
-          <p class="rv__count narrow">
-            <span :data-count="count">{{ count }}</span> avis sur
-            <PatioIcon name="google" class="rv__g" /> Google
-          </p>
-          <div class="rv__ctas">
-            <a :href="writeUrl" target="_blank" rel="noopener" class="btn">
-              Lire tous les avis <PatioIcon name="arrow-up-right" />
-            </a>
-            <a :href="writeUrl" target="_blank" rel="noopener" class="btn btn--ghost">Laisser un avis</a>
-          </div>
-        </div>
-
-        <div v-if="reviews.length" class="rv__list" data-stagger>
-          <figure v-for="r in reviews.slice(0, 4)" :key="r.author + r.publishedAt" class="rv__card">
-            <div class="rv__card-stars">
-              <PatioIcon v-for="i in r.rating" :key="i" name="star" />
+        <h2 class="display rv__title" data-split-chars>Vos avis</h2>
+        <div class="rv__note" data-fade>
+          <span class="display" :data-count="rating" data-dec="1">{{ fmt(rating) }}</span>
+          <div>
+            <div class="rv__stars" :aria-label="`Note de ${fmt(rating)} sur 5`">
+              <PatioIcon v-for="i in 5" :key="i" name="star" />
             </div>
-            <blockquote>« {{ r.text.length > 320 ? r.text.slice(0, 320).trim() + '…' : r.text }} »</blockquote>
-            <figcaption>
-              <img v-if="r.avatar" :src="r.avatar" alt="" width="36" height="36" referrerpolicy="no-referrer" loading="lazy" />
-              <span>
-                <a v-if="r.authorUrl" :href="r.authorUrl" target="_blank" rel="noopener nofollow">{{ r.author }}</a>
-                <template v-else>{{ r.author }}</template>
-                <small>{{ r.when }} · Google</small>
-              </span>
-            </figcaption>
-          </figure>
+            <p class="narrow"><span :data-count="count">{{ count }}</span>&nbsp;avis sur Google</p>
+          </div>
         </div>
+        <div class="rv__links narrow" data-fade>
+          <a :href="gUrl" target="_blank" rel="noopener" class="link-line">Lire tous les avis ↗</a>
+          <a :href="gUrl" target="_blank" rel="noopener" class="link-line">Laisser un avis ↗</a>
+        </div>
+      </aside>
 
-        <div v-else class="rv__empty" data-fade>
-          <p class="lead">
-            Une table qu'on recommande. Merci aux <strong>{{ count }}</strong> convives qui ont pris le temps de partager
-            leur passage au Patio.
-          </p>
-          <span class="script">et à vous, bientôt</span>
-        </div>
+      <!-- Un avis à la fois -->
+      <div
+        v-if="current"
+        class="rv__stage"
+        @mouseenter="paused = true"
+        @mouseleave="paused = false"
+        @pointerdown="onDown"
+        @pointerup="onUp"
+      >
+        <span class="rv__mark display" aria-hidden="true">“</span>
+        <span v-if="isPreview" class="rv__preview narrow">Aperçu dev — flux Google non connecté</span>
+
+        <figure class="rv__fig" aria-live="polite">
+          <blockquote ref="quoteEl" :key="index" class="rv__quote narrow" :class="{ 'is-long': isLong }">{{ clip(current.text) }}</blockquote>
+          <figcaption ref="metaEl" class="rv__meta">
+            <span class="rv__dash" />
+            <span class="rv__author">
+              <a v-if="current.authorUrl" :href="current.authorUrl" target="_blank" rel="noopener nofollow">{{ current.author }}</a>
+              <template v-else>{{ current.author }}</template>
+            </span>
+            <span class="rv__when narrow">
+              <span class="rv__mini-stars"><PatioIcon v-for="s in current.rating" :key="s" name="star" /></span>
+              <template v-if="current.when">{{ current.when }} · Google</template>
+            </span>
+          </figcaption>
+        </figure>
+
+        <nav class="rv__nav narrow" aria-label="Navigation des avis">
+          <span class="rv__count">
+            <b class="display">{{ String(index + 1).padStart(2, '0') }}</b>
+            <span>/ {{ String(n).padStart(2, '0') }}</span>
+          </span>
+          <span class="rv__bar"><span ref="progress" /></span>
+          <button class="link-line" @click="go(-1)">Précédent</button>
+          <button class="link-line" @click="go(1)">Suivant</button>
+        </nav>
       </div>
     </div>
   </section>
@@ -102,142 +213,194 @@ useReveal(root, ({ gsap, root: el }) => {
 <style scoped>
 .rv {
   background: var(--stone);
-}
-.rv__head {
-  position: relative;
-  display: grid;
-  gap: 1rem;
-  margin-bottom: clamp(3rem, 6vw, 5rem);
-}
-.rv__script {
-  position: absolute;
-  left: clamp(14rem, 34vw, 32rem);
-  bottom: -0.4em;
-  font-size: clamp(2.4rem, 4vw, 4rem);
-  color: var(--cobalt);
-  transform: rotate(-5deg);
+  padding-block: clamp(5rem, 10vw, 9rem);
+  overflow: hidden;
 }
 .rv__grid {
   display: grid;
-  grid-template-columns: minmax(340px, 1fr) 2fr;
-  gap: clamp(2rem, 5vw, 6rem);
+  grid-template-columns: minmax(260px, 0.8fr) 2fr;
+  gap: clamp(3rem, 7vw, 8rem);
   align-items: start;
+}
+
+/* ----- côté ----- */
+.rv__title {
+  font-size: clamp(3.2rem, 6vw, 6rem);
+  margin: 1rem 0 2.4rem;
 }
 .rv__note {
   display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 1.1rem;
+  padding-block: 1.4rem;
+  border-block: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
 }
-.rv__note .display {
-  font-size: clamp(7rem, 15vw, 14rem);
+.rv__note > .display {
+  font-size: clamp(4rem, 6vw, 5.5rem);
   line-height: 0.8;
 }
-.rv__on {
-  font-size: 1.8rem;
-  opacity: 0.5;
+.rv__note p {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .rv__stars {
-  display: flex;
-  gap: 0.25rem;
-  color: var(--ochre);
-  margin: 1.4rem 0 0.8rem;
-}
-.rv__stars svg {
-  width: 30px;
-  height: 30px;
-}
-.rv__count {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 1.15rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin: 0 0 2rem;
-}
-.rv__g {
-  width: 18px;
-  height: 18px;
-}
-.rv__ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-}
-.rv__list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  background: color-mix(in srgb, var(--ink) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
-}
-.rv__card {
-  margin: 0;
-  background: var(--paper);
-  padding: clamp(1.5rem, 2.5vw, 2.4rem);
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  transition: background 0.4s;
-}
-.rv__card:hover {
-  background: var(--cream);
-}
-.rv__card-stars {
   display: flex;
   gap: 2px;
   color: var(--ochre);
 }
-.rv__card-stars svg {
-  width: 15px;
-  height: 15px;
+.rv__stars svg {
+  width: 18px;
+  height: 18px;
 }
-.rv__card blockquote {
-  margin: 0;
-  font-family: var(--f-narrow);
-  font-size: 1.15rem;
-  line-height: 1.45;
-  flex: 1;
-}
-.rv__card figcaption {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-.rv__card figcaption img {
-  border-radius: 50%;
-}
-.rv__card figcaption small {
-  display: block;
-  font-weight: 400;
-  opacity: 0.6;
-  font-size: 0.8rem;
-}
-.rv__empty {
-  border-left: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
-  padding-left: clamp(1.5rem, 4vw, 4rem);
-  max-width: 44rem;
-}
-.rv__empty .lead {
-  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.6rem);
-  margin: 0 0 1rem;
-}
-.rv__empty .script {
-  font-size: 3rem;
-  color: var(--cobalt);
+.rv__links {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
 }
 
-@media (max-width: 900px) {
+/* ----- scène ----- */
+.rv__stage {
+  position: relative;
+  padding-top: clamp(3rem, 6vw, 5rem);
+  touch-action: pan-y;
+}
+.rv__mark {
+  position: absolute;
+  top: -0.18em;
+  left: -0.08em;
+  font-size: clamp(14rem, 24vw, 22rem);
+  line-height: 1;
+  color: var(--ink);
+  opacity: 0.07;
+  pointer-events: none;
+}
+.rv__preview {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: var(--ochre);
+  padding: 0.3em 0.7em;
+}
+.rv__fig {
+  position: relative;
+  margin: 0;
+  min-height: clamp(260px, 24vw, 340px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2.4rem;
+}
+.rv__quote {
+  margin: 0;
+  font-size: clamp(1.7rem, 1.1rem + 1.9vw, 3.1rem);
+  line-height: 1.14;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+  max-width: 24em;
+}
+.rv__quote.is-long {
+  font-size: clamp(1.35rem, 0.95rem + 1.2vw, 2.1rem);
+  line-height: 1.22;
+  max-width: 34em;
+}
+.rv__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.1rem;
+}
+.rv__dash {
+  width: 3rem;
+  height: 1px;
+  background: currentColor;
+}
+.rv__author {
+  font-family: var(--f-display);
+  font-size: 1.7rem;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  padding-top: 0.1em;
+}
+.rv__when {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+.rv__mini-stars {
+  display: inline-flex;
+  gap: 1px;
+  color: var(--ochre);
+}
+.rv__mini-stars svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ----- navigation ----- */
+.rv__nav {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 2rem;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.rv__nav button {
+  text-transform: inherit;
+  letter-spacing: inherit;
+  font-weight: inherit;
+}
+.rv__count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.rv__count b {
+  font-weight: 400;
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.rv__count span {
+  opacity: 0.5;
+}
+.rv__bar {
+  position: relative;
+  height: 1px;
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.rv__bar span {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+@media (max-width: 960px) {
   .rv__grid {
     grid-template-columns: 1fr;
   }
-  .rv__list {
-    grid-template-columns: 1fr;
-  }
-  .rv__script {
-    position: static;
+  .rv__nav {
+    gap: 1.2rem;
   }
 }
 </style>

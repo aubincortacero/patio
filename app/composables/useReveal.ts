@@ -169,12 +169,12 @@ export function useReveal(root: Ref<HTMLElement | null>, extra?: (t: Tools) => v
         const split = SplitText.create(node, { type: 'words' })
         gsap.fromTo(
           split.words,
-          { opacity: 0.14 },
+          { opacity: 0.1 },
           {
             opacity: 1,
-            stagger: 0.1,
-            ease: 'none',
-            scrollTrigger: { trigger: node, start: 'top 80%', end: 'bottom 45%', scrub: true },
+            stagger: 0.12,
+            ease: 'power1.out',
+            scrollTrigger: { trigger: node, start: 'top 90%', end: 'bottom 72%', scrub: 0.8 },
           },
         )
       })
@@ -182,6 +182,9 @@ export function useReveal(root: Ref<HTMLElement | null>, extra?: (t: Tools) => v
       extra?.(tools)
     }, el)
 
+    // Les pins (créés dans extra) doivent être calculés avant les déclencheurs situés plus bas,
+    // sinon ces derniers ignorent l'espace ajouté par les pins et se déclenchent trop tôt.
+    ScrollTrigger.sort()
     requestAnimationFrame(() => ScrollTrigger.refresh())
   })
 

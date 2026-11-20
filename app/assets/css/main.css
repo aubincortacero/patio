@@ -31,9 +31,17 @@
 }
 
 html {
+  /* Pas de barre de défilement native : remplacée par la barre de progression
+     en haut de l'écran (ScrollProgress). La largeur de page ne change jamais. */
+  scrollbar-width: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 }
 
 html.lenis,

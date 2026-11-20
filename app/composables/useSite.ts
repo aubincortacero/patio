@@ -47,7 +47,7 @@ export const spaces = [
     inout: 'Extérieur',
     where: 'Sur la rue piétonne Victor Pilhes',
     text: "En extérieur, une terrasse bistro de 12 couverts sous le store, sur la rue piétonne Victor Pilhes.",
-    img: '/images/facade.jpg',
+    img: '/images/facade-jour-2.png',
   },
   {
     n: '02',
@@ -74,7 +74,7 @@ export const spaces = [
     inout: 'Intérieur',
     where: 'Ambiance chalet de montagne',
     text: 'Une salle de 14 couverts, assis, pour déguster nos tapas, plats et desserts confectionnés maison dans une ambiance chalet de montagne.',
-    img: '/images/la-salle-du-restaurant.jpg',
+    img: '/images/salle-chalet-baie.png',
   },
 ]
 
@@ -102,6 +102,11 @@ export const producers = [
 ]
 
 export const gallery = [
+  { src: '/images/facade-jour-2.png', alt: 'La façade jaune et bleue du Patio, rue Victor Pilhes' },
+  { src: '/images/boeuf-legumes.png', alt: 'Bœuf tranché, légumes sautés et sésame' },
+  { src: '/images/bar-cocktails.png', alt: "Le bar et l'ardoise des cocktails" },
+  { src: '/images/cote-de-boeuf-grill.png', alt: 'Côte de bœuf saisie sur la plancha' },
+  { src: '/images/salle-chalet-baie.png', alt: 'La salle chalet et sa baie vitrée' },
   { src: '/images/facade.jpg', alt: 'La façade du Patio, de nuit, rue Victor Pilhes' },
   { src: '/images/la-salle-du-bar-avec-des-manges-debouts.jpg', alt: 'La salle côté bar, pierre et porte bleue' },
   { src: '/images/cote-de-boeuf-2.jpg', alt: 'Découpe de la côte de bœuf en cuisine' },

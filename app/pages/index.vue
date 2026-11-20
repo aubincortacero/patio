@@ -141,7 +141,15 @@ useReveal(root, ({ gsap, ScrollTrigger, reduced, root: el }) => {
 })
 
 const heroLetters = ['P', 'A', 'T', 'I', 'O']
-const galleryPicks = [gallery[3], gallery[1], gallery[6], gallery[5], gallery[4], gallery[9]]
+const pick = (src: string) => gallery.find((g) => g.src.endsWith(src))
+const galleryPicks = [
+  pick('boeuf-legumes.png'),
+  pick('la-salle-du-bar-avec-des-manges-debouts.jpg'),
+  pick('bar-cocktails.png'),
+  pick('lazinat-et-sa-rouzole.jpg'),
+  pick('salle-chalet-baie.png'),
+  pick('la-cuisine.jpg'),
+]
 </script>
 
 <template>
@@ -165,7 +173,7 @@ const galleryPicks = [gallery[3], gallery[1], gallery[6], gallery[5], gallery[4]
     <!-- ============ IMAGE PLEIN ÉCRAN ============ -->
     <section class="reveal">
       <div class="reveal__frame">
-        <img src="/images/facade-nuit.png" alt="La façade du Patio le soir, rue Victor Pilhes, sous le store jaune" />
+        <img src="/images/facade-jour.png" alt="La façade bleue et jaune du Patio et sa terrasse, rue Victor Pilhes" />
         <div class="reveal__caption wrap">
           <span class="eyebrow">Rue Victor Pilhes</span>
           <p class="display">Au cœur d'Ax,<br />une table de montagne.</p>
@@ -314,7 +322,7 @@ const galleryPicks = [gallery[3], gallery[1], gallery[6], gallery[5], gallery[4]
         <div class="team__grid">
           <article class="person">
             <div class="frame person__img" data-reveal-img data-parallax-img>
-              <img src="/images/cote-de-boeuf-2.jpg" alt="En cuisine, découpe d'une côte de bœuf" loading="lazy" />
+              <img src="/images/cote-de-boeuf-grill.png" alt="En cuisine, une côte de bœuf saisie" loading="lazy" />
             </div>
             <div class="person__body">
               <span class="eyebrow" data-fade>En cuisine</span>

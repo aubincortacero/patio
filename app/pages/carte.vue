@@ -129,14 +129,14 @@ const families = [
     <!-- Vin -->
     <section class="wine">
       <div class="frame wine__img" data-parallax-img>
-        <img src="/images/vin-rouge-pic-saint-loup.jpg" alt="Un verre de vin rouge Pic Saint-Loup" loading="lazy" />
+        <img src="/images/bar-cocktails.png" alt="Le bar du Patio, ses bouteilles et l'ardoise des cocktails" loading="lazy" />
       </div>
       <div class="wine__body">
         <span class="eyebrow" data-fade>À la cave</span>
         <h2 class="display h-md" data-split>Un verre<br />pour aller avec</h2>
         <p data-fade>
-          Une sélection de vins au verre et à la bouteille pour accompagner l'ardoise, des bières pression au comptoir et
-          de quoi trinquer en terrasse. Demandez conseil à Valentin.
+          Des vins pour accompagner l'ardoise, des bières pression au comptoir et une ardoise de cocktails pour
+          l'apéritif. Demandez conseil à Valentin.
         </p>
       </div>
     </section>

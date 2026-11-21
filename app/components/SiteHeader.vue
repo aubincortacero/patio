@@ -95,6 +95,7 @@ onMounted(() => {
           </div>
         </nav>
         <div class="menu__foot">
+          <div class="menu__item"><ClientOnly><OpenStatus /></ClientOnly></div>
           <div class="menu__item"><a :href="site.phones[0]!.href" class="lead">{{ site.phones[0]!.display }}</a></div>
           <div class="menu__item"><span>{{ site.address.street }}, {{ site.address.city }}</span></div>
           <div class="menu__item menu__socials">

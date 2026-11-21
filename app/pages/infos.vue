@@ -41,7 +41,6 @@ const openFaq = ref(0)
         <span class="ih__line"><span>Venir</span></span>
         <span class="ih__line"><span>au Patio</span></span>
       </h1>
-      <ClientOnly><OpenStatus class="ih__status" /></ClientOnly>
     </header>
 
     <section class="wrap ib">
@@ -147,12 +146,6 @@ const openFaq = ref(0)
 }
 .ih__line > span {
   display: block;
-}
-.ih__status {
-  position: absolute;
-  right: var(--gutter);
-  bottom: clamp(3rem, 5vw, 5rem);
-  font-size: 1rem;
 }
 
 .ib {
@@ -362,10 +355,6 @@ const openFaq = ref(0)
   .faq__grid,
   .expo {
     grid-template-columns: 1fr;
-  }
-  .ih__status {
-    position: static;
-    margin-top: 1.5rem;
   }
 }
 </style>

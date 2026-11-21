@@ -159,7 +159,6 @@ const galleryPicks = [
       <div class="hero__meta wrap">
         <span class="eyebrow">Ax-les-Thermes — Ariège</span>
         <span class="hero__meta-mid narrow">Cuisine maison · Produits locaux · Focaccia pétrie à la main</span>
-        <ClientOnly><OpenStatus /></ClientOnly>
       </div>
       <h1 class="hero__title">
         <span class="sr-only">Le Patio, table pyrénéenne à Ax-les-Thermes</span>

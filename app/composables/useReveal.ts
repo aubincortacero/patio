@@ -57,11 +57,13 @@ export function useReveal(root: Ref<HTMLElement | null>, extra?: (t: Tools) => v
     // Un composant enfant qui a son propre useReveal gère ses éléments lui-même.
     const q = (s: string) =>
       Array.from(el.querySelectorAll<HTMLElement>(s)).filter((n) => n.parentElement?.closest('[data-reveal-scope]') === el)
+    // gsap.set sur une liste vide déclenche un avertissement « target not found »
+    const set = (els: HTMLElement[], vars: gsap.TweenVars) => els.length && gsap.set(els, vars)
     if (!reduced) {
-      gsap.set(q('[data-fade]'), { autoAlpha: 0, y: 40 })
-      gsap.set(q('[data-stagger] > *'), { autoAlpha: 0, y: 36 })
-      gsap.set(q('[data-reveal-img]'), { clipPath: 'inset(100% 0% 0% 0%)' })
-      gsap.set(q('[data-split], [data-split-chars]'), { autoAlpha: 0 })
+      set(q('[data-fade]'), { autoAlpha: 0, y: 40 })
+      set(q('[data-stagger] > *'), { autoAlpha: 0, y: 36 })
+      set(q('[data-reveal-img]'), { clipPath: 'inset(100% 0% 0% 0%)' })
+      set(q('[data-split], [data-split-chars]'), { autoAlpha: 0 })
     }
 
     await waitReady(ready)
@@ -71,7 +73,7 @@ export function useReveal(root: Ref<HTMLElement | null>, extra?: (t: Tools) => v
       const tools: Tools = { gsap, ScrollTrigger, SplitText, reduced, root: el }
 
       if (reduced) {
-        gsap.set(q('[data-split], [data-split-chars]'), { autoAlpha: 1 })
+        set(q('[data-split], [data-split-chars]'), { autoAlpha: 1 })
         extra?.(tools)
         return
       }

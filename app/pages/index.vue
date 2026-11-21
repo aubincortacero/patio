@@ -61,19 +61,19 @@ useReveal(root, ({ gsap, ScrollTrigger, reduced, root: el }) => {
 
   const mm = gsap.matchMedia()
 
-  /* ---------- Image qui s'ouvre plein écran ---------- */
+  /* ---------- Photo 16/9 qui grandit au scroll ---------- */
   mm.add('(min-width: 0px)', () => {
     if (reduced) {
-      gsap.set($('.reveal__frame'), { clipPath: 'inset(0% 0% 0% 0%)' })
+      gsap.set($('.reveal__frame'), { scale: 1 })
       return
     }
     const tl = gsap.timeline({
-      scrollTrigger: { trigger: $('.reveal'), start: 'top top', end: '+=120%', scrub: true, pin: true, refreshPriority: 2 },
+      scrollTrigger: { trigger: $('.reveal'), start: 'top top', end: '+=90%', scrub: true, pin: true, refreshPriority: 2 },
     })
-    const start = window.innerWidth < 961 ? 'inset(16% 12% 16% 12%)' : 'inset(14% 31% 14% 31%)'
-    tl.fromTo($('.reveal__frame'), { clipPath: start }, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' })
-      .fromTo($('.reveal__frame img'), { scale: 1.25 }, { scale: 1, ease: 'none' }, 0)
-      .fromTo($$('.reveal__caption > *'), { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, stagger: 0.1, ease: 'power2.out', duration: 0.35 }, 0.62)
+    // Le scale garde le ratio 16/9 à chaque instant
+    tl.fromTo($('.reveal__frame'), { scale: 0.5 }, { scale: 1, ease: 'power1.inOut', duration: 1 })
+      .fromTo($('.reveal__frame img'), { scale: 1.2 }, { scale: 1, ease: 'none', duration: 1 }, 0)
+      .fromTo($$('.reveal__caption > *'), { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, stagger: 0.06, ease: 'power2.out', duration: 0.2 }, 0.78)
   })
 
   /* ---------- Les 4 ambiances : scroll horizontal ---------- */
@@ -493,13 +493,18 @@ const galleryPicks = [
   height: 100svh;
   margin-top: -30svh;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .reveal__frame {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: min(76vw, calc((100svh - 180px) * 16 / 9));
+  aspect-ratio: 16 / 9;
   overflow: hidden;
-  clip-path: inset(14% 31% 14% 31%);
   background: var(--ink-deep);
+  transform: scale(0.5);
+  transform-origin: 50% 0%;
 }
 .reveal__frame img {
   width: 100%;
@@ -521,12 +526,16 @@ const galleryPicks = [
   display: grid;
   gap: 0.8rem;
 }
+.reveal__caption.wrap {
+  padding-inline: clamp(1.2rem, 3vw, 2.8rem);
+  padding-bottom: clamp(1.2rem, 3vw, 2.6rem);
+}
 .reveal__caption .display {
-  font-size: clamp(3rem, 7vw, 7.5rem);
+  font-size: clamp(1.8rem, 3.8vw, 4.4rem);
   margin: 0;
 }
 .reveal__caption .script {
-  font-size: clamp(2.2rem, 4vw, 4rem);
+  font-size: clamp(1.6rem, 2.4vw, 2.8rem);
   color: var(--ochre);
 }
 
@@ -1063,7 +1072,7 @@ const galleryPicks = [
     margin-top: -26svh;
   }
   .reveal__frame {
-    clip-path: inset(16% 12% 16% 12%);
+    width: 90vw;
   }
   .manifesto__grid,
   .foca__grid,

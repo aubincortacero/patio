@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { site } = useSite()
-useSeoMeta({ title: 'Mentions légales — Le Patio', robots: 'noindex' })
+useSeoMeta({ title: 'Mentions légales — Le Patio' })
 </script>
 
 <template>

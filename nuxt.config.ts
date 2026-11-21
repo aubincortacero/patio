@@ -14,6 +14,12 @@ export default defineNuxtConfig({
     ],
   },
 
+  // Site NON référencé : en-tête X-Robots-Tag sur toutes les réponses (pages, images, API).
+  // À retirer, avec la balise meta robots ci-dessous et public/robots.txt, pour la mise en ligne officielle.
+  routeRules: {
+    '/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet, noimageindex' } },
+  },
+
   runtimeConfig: {
     // Clé Google Places API (New) — à définir dans .env : NUXT_GOOGLE_PLACES_KEY
     googlePlacesKey: '',
@@ -33,6 +39,7 @@ export default defineNuxtConfig({
           content:
             "Le Patio, table pyrénéenne à Ax-les-Thermes. Cuisine maison, produits locaux et de saison, focaccia pétrie à la main. Terrasse, patio intime, salle bar et salle chalet.",
         },
+        { name: 'robots', content: 'noindex, nofollow, noarchive, nosnippet, noimageindex' },
         { name: 'theme-color', content: '#11126a' },
         { property: 'og:type', content: 'restaurant' },
         { property: 'og:title', content: 'Le Patio — Table pyrénéenne' },
